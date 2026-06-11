@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tower Before Dusk</title>
+  </head>
+  <body>
+    <div id="app">
+      <div id="hud">
+        <span id="hud-level"></span>
+        <span id="hud-eggs"></span>
+        <span id="hud-jumps"></span>
+        <span id="hud-moves"></span>
+        <span id="hud-time"></span>
+      </div>
+      <canvas id="game"></canvas>
+      <div id="controls-hint">
+        ← → ↑ ↓ Move &nbsp;|&nbsp; Space Jump (needs 🥕) &nbsp;|&nbsp; R Restart &nbsp;|&nbsp; S Music
+      </div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
