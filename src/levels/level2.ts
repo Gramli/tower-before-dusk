@@ -1,10 +1,10 @@
 import { CellType } from '../models/game-models';
 import { Level } from './level';
 
-export class Level1 extends Level {
+export class Level2 extends Level {
   constructor() {
     super();
-    this.name = 'Level 1';
+    this.name = 'Level 2';
     this.maxMoves = 34;
   }
 
@@ -15,8 +15,10 @@ export class Level1 extends Level {
   }
 
   private setupWalls(): void {
+    this.fillDiagonal(1, 1, true, Level.ROWS-2, CellType.rock);
+    this.fillDiagonal(Level.COLS - 3, 2, false, Level.ROWS-3, CellType.rock);
+    this.fillDiagonal(2, 1, true, Level.ROWS - 3, CellType.rock);
     this.fillColumn(7, 2, 5, CellType.rock);
-    this.fillColumn(6, 2, 5, CellType.rock);
     this.fillColumn(10,0, 2, CellType.water);
     this.fillColumn(11,0, 2, CellType.water);
     this.fillRow(12,0, 10, CellType.water);

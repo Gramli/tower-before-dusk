@@ -1,7 +1,7 @@
 import { Bridge } from "../game-objects/bridge";
 import type { GameObject } from "../game-objects/gameObject";
 import { Tree } from "../game-objects/tree";
-import { CellType } from "../models/gameState";
+import { CellType } from "../models/game-models";
 
 export abstract class Level {
   static readonly COLS      = 20;
@@ -14,10 +14,7 @@ export abstract class Level {
 
   objects: GameObject[] = [];
   towers: Array<{ x: number; y: number }> = [];
-  dayTime: number = 0;
-  stepTakenTime: number = 0.5;
-  cutDownTreeTakenTime: number = 1.5;
-  buildBridgeTakenTime: number = 2;
+  maxMoves: number = 40;
 
   constructor() {
     this.grid = Array.from({ length: Level.COLS }, () =>
@@ -59,8 +56,8 @@ export abstract class Level {
     return this.towers.some(d => d.x === x && d.y === y);
   }
 
-  canBuildBridge(collectedWood: number){
-    return true;
+  canBuildBridge(collectedWood: number): boolean {
+    return collectedWood >= 2;
   }
 
   addBridge(x: number, y: number): void {

@@ -1,69 +1,147 @@
-//https://github.com/GoogleChromeLabs/webmcp-tools/blob/main/demos/react-flightsearch/src/webmcp.ts
-//https://developer.chrome.com/docs/ai/webmcp/imperative-api
-//https://developer.chrome.com/docs/ai/webmcp/declarative-api
+import type { GameState } from "./models/game-state";
 
+export type GameAction =
+  | "MOVE_UP"
+  | "MOVE_DOWN"
+  | "MOVE_LEFT"
+  | "MOVE_RIGHT"
+  | "COLLECT_WOOD";
 
-const registeredTools: Record<string, AbortController | null> = {
-  counterInc: null,
-  getCounter: null,
+export type GamePlan = {
+  actions: GameAction[];
+  summary?: string;
 };
 
-const incrementCounterTool = {
-  name: "incrementCounter",
-  description: "Increments the counter by a specified value.",
-  inputSchema: {
-    type: "object",
-    properties: { value: { type: "number" } },
-  },
-  execute: async ({ value }: { value: number }) => {
-    const counter  = document.getElementById('counter') as HTMLElement;
-    if (counter) {
-      const currentValue = parseInt(counter.innerText, 10) || 0;
-      counter.innerText = (currentValue + value).toString();
-    }
-  },
-  annotations: {
-    readOnlyHint: false,
-    untrustedContentHint: true
-  },
+type WebMcpContext = {
+  registerTool(tool: object, options: { signal: AbortSignal }): void;
 };
 
-const getCounterTool = {
-  name: "getCounter",
-  description: "Retruns the counter value.",
-  outputSchema: {
-    type: "string",
-    description: "a value of the actual counter",
-  },
-  execute: async () => {
-    const counter  = document.getElementById('counter') as HTMLElement;
-    return counter.innerText;
-  },
-  annotations: {
-    readOnlyHint: false,
-    untrustedContentHint: true
-  },
-};
+type AiPlanHandler = (plan: GamePlan) => void | Promise<void>;
 
-export function registerCounterTool() {
-  const modelContext = document.modelContext || navigator.modelContext;
-  if (modelContext) {
-    if (!registeredTools.counter) {
-      registeredTools.counterInc = new AbortController();
-      registeredTools.getCounter = new AbortController();
-      modelContext.registerTool(incrementCounterTool, { signal: registeredTools.counterInc.signal });
-      modelContext.registerTool(getCounterTool, { signal: registeredTools.getCounter.signal });
-    }
+declare global {
+  interface Document {
+    modelContext?: WebMcpContext;
+  }
+
+  interface Navigator {
+    modelContext?: WebMcpContext;
   }
 }
 
-export function unregisterCounterTool() {
-  if (registeredTools.getCounter) {
-    registeredTools.getCounter.abort();
-    registeredTools.getCounter = null;
+const registeredTools: Record<"getGameState" | "submitPlan", AbortController | null> = {
+  getGameState: null,
+  submitPlan: null,
+};
+
+let aiPlanHandler: AiPlanHandler | null = null;
+
+export function setAiPlanHandler(handler: AiPlanHandler | null): void {
+  aiPlanHandler = handler;
+}
+
+export function registerGameTools(getGameState: () => GameState): void {
+  const modelContext = document.modelContext || navigator.modelContext;
+  if (!modelContext || registeredTools.getGameState || registeredTools.submitPlan) {
+    return;
   }
-  if(registeredTools.counterInc){
-    registeredTools.counterInc.abort();
-    registeredTools.counterInc = null;
-  }
+
+  registeredTools.getGameState = new AbortController();
+  registeredTools.submitPlan = new AbortController();
+
+  modelContext.registerTool(createGetGameStateTool(getGameState), {
+    signal: registeredTools.getGameState.signal,
+  });
+  modelContext.registerTool(createSubmitPlanTool(), {
+    signal: registeredTools.submitPlan.signal,
+  });
+}
+
+export function unregisterGameTools(): void {
+  registeredTools.getGameState?.abort();
+  registeredTools.submitPlan?.abort();
+  registeredTools.getGameState = null;
+  registeredTools.submitPlan = null;
+}
+
+function createGetGameStateTool(getGameState: () => GameState): object {
+  return {
+    name: "getGameState",
+    description:
+      "Get the current Tower Before Dusk game state. Use this state to prepare one complete one-shot plan before calling submitPlan.",
+    outputSchema: {
+      type: "object",
+      properties: {
+        objective: { type: "string" },
+        legend: { type: "object", additionalProperties: { type: "string" } },
+        rules: { type: "object", additionalProperties: { type: "string" } },
+        actions: {
+          type: "array",
+          items: { type: "string" },
+        },
+        remainingMoves: { type: "number" },
+        wood: { type: "number" },
+        visibleMap: {
+          type: "array",
+          items: { type: "string" },
+        },
+      },
+      required: [
+        "objective",
+        "legend",
+        "rules",
+        "actions",
+        "remainingMoves",
+        "wood",
+        "visibleMap",
+      ],
+    },
+    execute: async () => getGameState(),
+    annotations: {
+      readOnlyHint: true,
+      untrustedContentHint: true,
+    },
+  };
+}
+
+function createSubmitPlanTool(): object {
+  return {
+    name: "submitPlan",
+    description:
+      "Submit a complete one-shot action plan for the game UI to validate and replay with delay.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        actions: {
+          type: "array",
+          items: {
+            type: "string",
+            enum: [
+              "MOVE_UP",
+              "MOVE_DOWN",
+              "MOVE_LEFT",
+              "MOVE_RIGHT",
+              "COLLECT_WOOD",
+            ],
+          },
+        },
+        summary: { type: "string" },
+      },
+      required: ["actions"],
+      additionalProperties: false,
+    },
+    outputSchema: {
+      type: "string",
+      description: "Short confirmation that the plan was received.",
+    },
+    execute: async (plan: GamePlan) => {
+      if (aiPlanHandler) {
+        void aiPlanHandler(plan);
+      }
+      return "Plan received.";
+    },
+    annotations: {
+      readOnlyHint: false,
+      untrustedContentHint: true,
+    },
+  };
 }

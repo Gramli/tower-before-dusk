@@ -1,14 +1,19 @@
 import { GameConstants } from "./game-constants";
+import { Bridge } from "./game-objects/bridge";
 import { Player, type Direction } from "./game-objects/player";
 import { Tree } from "./game-objects/tree";
-import { Level } from "./levels/Level";
+import { getDaylightState, type DaylightState } from "./game-logic/daylight";
+import type { Level } from "./levels/level";
+import { Level2 } from "./levels/level2";
+import { gameState, type GameState } from "./models/game-state";
+import { CellType, type GameActor, type GamePhase } from "./models/game-models";
 import { Level1 } from "./levels/level1";
-import { CellType, gameState, type GameState } from "./models/gameState";
-
-export type GamePhase = 'menu' | 'playing' | 'won' | 'lost';
+import { Level3 } from "./levels/level3";
 
 const LEVELS: Array<() => Level> = [
   () => new Level1(),
+  () => new Level2(),
+  () => new Level3(),
 ];
 
 export class Game {
@@ -16,15 +21,26 @@ export class Game {
   levelIndex:     number = 0;
   level!:         Level;
   player!:        Player;
-  elapsedSeconds: number = 0;
+  activeActor:    GameActor = 'player';
 
-  private timerHandle: number | null = null;
+  get usedMoves(): number {
+    return this.player?.moves ?? 0;
+  }
+
+  get maxMoves(): number {
+    return this.level?.maxMoves ?? 1;
+  }
+
+  get remainingMoves(): number {
+    return Math.max(0, this.maxMoves - this.usedMoves);
+  }
 
   get timeLeft(): number {
-    return this.level.dayTime - 
-    (this.player.moves * this.level.stepTakenTime + 
-      this.player.cutedTrees * this.level.cutDownTreeTakenTime +
-      this.player.bridgesBuilded * this.level.buildBridgeTakenTime);
+    return this.remainingMoves;
+  }
+
+  get daylight(): DaylightState {
+    return getDaylightState(this.usedMoves, this.maxMoves);
   }
 
   get hasNextLevel(): boolean {
@@ -38,12 +54,7 @@ export class Game {
 
     this.player         = new Player(0, 0);
     this.phase          = 'playing';
-    this.elapsedSeconds = 0;
-
-    this.stopTimer();
-    this.timerHandle = window.setInterval(() => {
-      if (this.phase === 'playing') this.elapsedSeconds++;
-    }, 1000);
+    this.activeActor    = 'player';
   }
 
   restartLevel(): void {
@@ -53,6 +64,16 @@ export class Game {
   nextLevel(): void {
     if (this.levelIndex + 1 < LEVELS.length) {
       this.startLevel(this.levelIndex + 1);
+    }
+  }
+
+  setActiveActor(actor: GameActor): void {
+    this.activeActor = actor;
+  }
+
+  failCurrentAttempt(): void {
+    if (this.phase === 'playing') {
+      this.phase = 'lost';
     }
   }
 
@@ -68,24 +89,37 @@ export class Game {
        return;
     }
 
-    if(this.level.grid[nx][ny] === CellType.water && canBuildBridge){
+    let usedMoves = 1;
+
+    if(this.level.grid[nx][ny] === CellType.water && canBuildBridge && !this.hasBridgeAt(nx, ny)){
       this.buildBridge(nx, ny);
+      usedMoves++;
     }
 
-    this.tryCutDownTree();
+    if (this.tryCutDownTree()) {
+      usedMoves++;
+    }
 
     this.player.x = nx;
     this.player.y = ny;
-    this.player.moves++;
+    this.player.moves += usedMoves;
 
     this.checkEndConditions();
   }
-
 
   private buildBridge(x: number, y: number) {
     this.level.addBridge(x,y);
     this.player.buildBridge();
 
+  }
+
+  handleCollectWood(): void {
+    if (this.phase !== 'playing') return;
+
+    if (this.tryCutDownTree()) {
+      this.player.moves++;
+      this.checkEndConditions();
+    }
   }
 
   setDirection(direction: Direction): void {
@@ -94,13 +128,53 @@ export class Game {
     }
   }
 
-  public getAIState(): GameState {
+  public getGameState(): GameState {
+    if (!this.level || !this.player) {
+      this.startLevel(this.levelIndex);
+    }
+
     return {
       ...gameState,
       legend: { ...gameState.legend },
       rules: { ...gameState.rules },
-      visibleMap: [...gameState.visibleMap],
+      remainingMoves: this.remainingMoves,
+      wood: this.player.collectedWood,
+      visibleMap: this.getVisibleMap(),
     };
+  }
+
+  private getVisibleMap(): string[] {
+    return Array.from({ length: GameConstants.MAP_ROWS }, (_, y) =>
+      Array.from({ length: GameConstants.MAP_COLS }, (_, x) =>
+        this.getMapSymbol(x, y)
+      ).join(" ")
+    );
+  }
+
+  private getMapSymbol(x: number, y: number): string {
+    if (this.player.x === x && this.player.y === y) {
+      return "P";
+    }
+
+    const object = this.level.objects.find(obj => obj.x === x && obj.y === y);
+    if (object instanceof Tree) {
+      return "W";
+    }
+    if (object instanceof Bridge) {
+      return "B";
+    }
+
+    switch (this.level.grid[x][y]) {
+      case CellType.water:
+        return "~";
+      case CellType.tower:
+        return "G";
+      case CellType.rock:
+        return "R";
+      case CellType.empty:
+      default:
+        return ".";
+    }
   }
 
   private canMoveTo(x: number, y: number, canBuildBridge: boolean): boolean {
@@ -110,34 +184,41 @@ export class Game {
 
 
     const cell = this.level.grid[x][y];
-    return cell !== CellType.rock && (cell !== CellType.water || canBuildBridge);
+    return cell !== CellType.rock && (cell !== CellType.water || canBuildBridge || this.hasBridgeAt(x, y));
   }
 
-  private tryCutDownTree(): void {
+  private hasBridgeAt(x: number, y: number): boolean {
+    return this.level.objects.some(obj => obj instanceof Bridge && obj.x === x && obj.y === y);
+  }
+
+  private tryCutDownTree(): boolean {
     const { x, y } = this.player;
+    let didCutTree = false;
+
     this.level.objects = this.level.objects.filter(obj => {
       if (obj.x === x && obj.y === y) {
         if (obj instanceof Tree) {
           this.player.collectedWood++;
           this.player.cutedTrees++;
+          didCutTree = true;
           return false;
         }
       }
       return true;
     });
+
+    return didCutTree;
   }
 
   private checkEndConditions(): void {
     const { x, y } = this.player;
 
-    if (this.level.isTower(x, y) && this.timeLeft > 0) {
-      this.stopTimer();
+    if (this.level.isTower(x, y) && this.usedMoves <= this.maxMoves) {
       this.phase = 'won';
       return;
     }
 
-    if (!this.hasLegalMove() || this.timeLeft === 0) {
-      this.stopTimer();
+    if (!this.hasLegalMove() || this.usedMoves >= this.maxMoves) {
       this.phase = 'lost';
     }
   }
@@ -156,10 +237,4 @@ export class Game {
     return false;
   }
 
-  private stopTimer(): void {
-    if (this.timerHandle !== null) {
-      window.clearInterval(this.timerHandle);
-      this.timerHandle = null;
-    }
-  }
 }

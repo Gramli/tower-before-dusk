@@ -1,20 +1,32 @@
 import type { Game } from "../game";
 import type { GameImages } from "../game-assets";
-import { Level } from "../levels/Level";
-import { CellType } from "../models/gameState";
+import { Level } from "../levels/level";
+import { CellType } from "../models/game-models";
 import { DeviceDetection } from "./game-detection";
+import { OverlayRenderer } from "./overlay-renderer";
+import { RockRenderer } from "./static-objects/rock-renderer";
+import { WaterRenderer } from "./static-objects/water-renderer";
 
 export class GameRenderer {
   private ctx: CanvasRenderingContext2D;
   private images: GameImages;
-  private rockVariants = new Map<string, HTMLImageElement>();
+  private overlayRenderer: OverlayRenderer;
+  private rockRenderer: RockRenderer;
+  private waterRenderer: WaterRenderer;
 
   constructor(ctx: CanvasRenderingContext2D, images: GameImages) {
     this.ctx = ctx;
     this.images = images;
+    this.overlayRenderer = new OverlayRenderer(ctx, images);
+    this.rockRenderer = new RockRenderer(ctx, images);
+    this.waterRenderer = new WaterRenderer(ctx, images);
   }
 
-  render(game: Game, tileSize: number = Level.TILE_SIZE): void {
+  render(
+    game: Game,
+    tileSize: number = Level.TILE_SIZE,
+    showHelpDialog: boolean = false,
+  ): void {
     const { ctx } = this;
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -28,8 +40,12 @@ export class GameRenderer {
       case "won":
       case "lost":
         this.drawLevel(game, tileSize);
-        this.drawOverlay(game, tileSize);
+        this.overlayRenderer.drawEndOverlay(game, tileSize);
         break;
+    }
+
+    if (showHelpDialog) {
+      this.overlayRenderer.drawHelpDialog();
     }
   }
 
@@ -53,15 +69,14 @@ export class GameRenderer {
             ctx.drawImage(images.land, px, py, tileSize, tileSize);
             break;
           case CellType.rock:
-            ctx.drawImage(images.land, px, py, tileSize, tileSize);
-            ctx.drawImage(this.getRockImage(x, y), px, py, tileSize, tileSize);
+            this.rockRenderer.drawRock(x, y, px, py, tileSize);
             break;
           case CellType.tower:
             ctx.drawImage(images.land, px, py, tileSize, tileSize);
             ctx.drawImage(images.castle, px, py, tileSize, tileSize);
             break;
           case CellType.water:
-            ctx.drawImage(images.water, px, py, tileSize, tileSize);
+            this.waterRenderer.drawWater(grid, x, y, px, py, tileSize);
             break;
         }
       }
@@ -72,23 +87,6 @@ export class GameRenderer {
     for (const obj of game.level.objects) {
       obj.draw(this.ctx, tileSize, this.images);
     }
-  }
-
-  private getRockImage(x: number, y: number): HTMLImageElement {
-    const key = `${x},${y}`;
-    const existingVariant = this.rockVariants.get(key);
-
-    if (existingVariant) {
-      return existingVariant;
-    }
-
-    const rockImages = [this.images.rock, this.images.rock1, this.images.rock2];
-    const variantIndex = Math.floor(Math.random() * rockImages.length);
-    const rockImage = rockImages[variantIndex];
-
-    this.rockVariants.set(key, rockImage);
-
-    return rockImage;
   }
 
   private drawMenu(tileSize: number): void {
@@ -102,7 +100,7 @@ export class GameRenderer {
       ctx.fillRect(0, 0, w, h);
     }
 
-    ctx.fillStyle = "rgba(0,0,0,0.52)";
+    ctx.fillStyle = "rgba(22, 17, 13, 0.58)";
     ctx.fillRect(0, 0, w, h);
 
     const isTouchDevice = DeviceDetection.isTouchDevice();
@@ -122,16 +120,16 @@ export class GameRenderer {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
 
-    ctx.fillStyle = "#f1c40f";
+    ctx.fillStyle = "#ffd36d";
     ctx.font = "bold 38px system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Tower Before Down", w / 2, h / 2 - 90);
+    ctx.fillText("Tower Before Dusk", w / 2, h / 2 - 90);
 
-    ctx.fillStyle = "#d4f7b0";
+    ctx.fillStyle = "#f1dfad";
     ctx.font = "17px system-ui, sans-serif";
     ctx.fillText(
-      "Plan your path · build a bridge · reach the Tower",
+      "Guide the orc home before sunset",
       w / 2,
       h / 2 - 52,
     );
@@ -164,104 +162,60 @@ export class GameRenderer {
     });
   }
 
-  private drawTouchDevicesControls() {
+  private drawTouchDevicesControls(): void {
     const { ctx } = this;
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
 
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillStyle = "rgba(34, 27, 20, 0.72)";
     ctx.fillRect(w / 2 - 220, h / 2 - 20, 440, 76);
 
     ctx.font = "16px system-ui, sans-serif";
-    ctx.fillStyle = "#d4f7b0";
+    ctx.fillStyle = "#f1dfad";
     ctx.fillText("Use the on-screen controls to play", w / 2, h / 2);
-    ctx.fillText("S — Toggle music", w / 2, h / 2 + 22);
+    ctx.fillText("Move into water to build a bridge", w / 2, h / 2 + 22);
 
     ctx.font = "14px system-ui, sans-serif";
     ctx.fillText("Tap or R to start", w / 2, h / 2 + 140);
   }
 
-  private drawLargeDevicesControls() {
+  private drawLargeDevicesControls(): void {
     const { ctx } = this;
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
 
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillStyle = "rgba(34, 27, 20, 0.72)";
     ctx.fillRect(w / 2 - 220, h / 2 - 20, 440, 108);
 
-    const controls: [string, string][] = [
-      ["← → ↑ ↓", "Move the rabbit"],
-      ["Space", "Jump 2 tiles (requires a carrot)"],
+    const controls: [string, string, boolean?][] = [
+      ["Arrow keys", "Move the orc"],
+      ["Water", "Enter to build bridge (needs", true],
       ["R", "Start / Restart"],
-      ["S", "Toggle music"],
+      ["H", "Help"],
     ];
-    controls.forEach(([key, desc], i) => {
+    controls.forEach(([key, desc, needsTree], i) => {
+      const textX = w / 2 - 10;
+      const textY = h / 2 + 2 + i * 24;
       ctx.font = "14px monospace";
-      ctx.fillStyle = "#f1c40f";
+      ctx.fillStyle = "#ffd36d";
       ctx.textAlign = "right";
-      ctx.fillText(key, w / 2 - 60, h / 2 + 2 + i * 24);
+      ctx.fillText(key, w / 2 - 60, textY);
       ctx.font = "14px system-ui, sans-serif";
-      ctx.fillStyle = "#fff";
+      ctx.fillStyle = "#f7ead0";
       ctx.textAlign = "left";
-      ctx.fillText(desc, w / 2 -10 , h / 2 +2  + i * 24);
+      ctx.fillText(desc, textX, textY);
+
+      if (needsTree) {
+        const iconSize = 16;
+        const iconX = textX + ctx.measureText(desc).width + 5;
+        ctx.drawImage(this.images.tree, iconX, textY - iconSize / 2, iconSize, iconSize);
+        ctx.fillText(")", iconX + iconSize + 4, textY);
+      }
     });
 
     ctx.font = "14px system-ui, sans-serif";
-    ctx.fillStyle = "#d4f7b0";
+    ctx.fillStyle = "#f1dfad";
     ctx.textAlign = "center";
     ctx.fillText("Press Enter or Space to start", w / 2, h / 2 + 140);
-  }
-
-  private drawOverlay(game: Game, tileSize: number): void {
-    const { ctx } = this;
-    const w = ctx.canvas.width;
-    const h = ctx.canvas.height;
-    const won = game.phase === "won";
-
-    ctx.fillStyle = "rgba(0,0,0,0.68)";
-    ctx.fillRect(0, 0, w, h);
-
-    const icon = won ? this.images.flag : this.images.p_front;
-    const iconSize = tileSize * 2;
-    ctx.drawImage(icon, w / 2 - iconSize / 2, h / 2 - 110, iconSize, iconSize);
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = won ? "#f1c40f" : "#e74c3c";
-    ctx.font = "bold 34px system-ui, sans-serif";
-    ctx.fillText(
-      won
-        ? game.hasNextLevel
-          ? "Level Complete!"
-          : "🎊  You Win!  🎊"
-        : "No moves left!",
-      w / 2,
-      h / 2 - 10,
-    );
-
-    const time = this.formatTime(game.elapsedSeconds);
-    ctx.fillStyle = "#fff";
-    ctx.font = "18px system-ui, sans-serif";
-    ctx.fillText(
-      `Moves: ${game.player.moves}   |   Time: ${time}`,
-      w / 2,
-      h / 2 + 32,
-    );
-
-    ctx.fillStyle = "#d4f7b0";
-    ctx.font = "15px system-ui, sans-serif";
-    const hint =
-      won && game.hasNextLevel
-        ? "Enter — next level   |   R — replay"
-        : "R — restart";
-    ctx.fillText(hint, w / 2, h / 2 + 68);
-  }
-
-  private formatTime(totalSeconds: number): string {
-    const m = Math.floor(totalSeconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const s = (totalSeconds % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
   }
 }

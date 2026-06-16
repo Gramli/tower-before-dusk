@@ -6,10 +6,14 @@ export class MenuRenderer {
   private game: Game;
 
   private hudLevel: HTMLElement;
-  private hudEggs: HTMLElement;
-  private hudJumps: HTMLElement;
+  private hudWood: HTMLElement;
+  private hudWoodCount: HTMLElement;
   private hudMoves: HTMLElement;
-  private hudTime: HTMLElement;
+  private hudDayLabel: HTMLElement;
+  private hudDayRemaining: HTMLElement;
+  private hudDayProgress: HTMLElement;
+  private gameStage: HTMLElement;
+  private daylightOverlay: HTMLElement;
 
   constructor(canvas: HTMLCanvasElement, game: Game) {
     if (!canvas) {
@@ -21,10 +25,14 @@ export class MenuRenderer {
     this.ctx = canvas.getContext("2d")!;
 
     this.hudLevel = document.getElementById("hud-level")!;
-    this.hudEggs = document.getElementById("hud-eggs")!;
-    this.hudJumps = document.getElementById("hud-jumps")!;
+    this.hudWood = document.getElementById("hud-wood")!;
+    this.hudWoodCount = document.getElementById("hud-wood-count")!;
     this.hudMoves = document.getElementById("hud-moves")!;
-    this.hudTime = document.getElementById("hud-time")!;
+    this.hudDayLabel = document.getElementById("hud-day-label")!;
+    this.hudDayRemaining = document.getElementById("hud-day-remaining")!;
+    this.hudDayProgress = document.getElementById("hud-day-progress")!;
+    this.gameStage = document.getElementById("game-stage")!;
+    this.daylightOverlay = document.getElementById("daylight-overlay")!;
 
     this.drawBase();
   }
@@ -50,22 +58,40 @@ export class MenuRenderer {
       this.game.phase !== "lost"
     ) {
       this.hudLevel.textContent =
-        this.hudEggs.textContent =
-        this.hudJumps.textContent =
+        this.hudWoodCount.textContent =
         this.hudMoves.textContent =
-        this.hudTime.textContent =
+        this.hudDayLabel.textContent =
+        this.hudDayRemaining.textContent =
           "";
+      this.hudWood.hidden = true;
+      this.hudDayProgress.style.width = "0%";
+      this.gameStage.style.setProperty("--daylight-brightness", "1");
+      this.daylightOverlay.style.opacity = "0";
       return;
     }
-    const mm = Math.floor(this.game.elapsedSeconds / 60)
-      .toString()
-      .padStart(2, "0");
-    const ss = (this.game.elapsedSeconds % 60).toString().padStart(2, "0");
-
     this.hudLevel.textContent = this.game.level.name;
-    //this.hudEggs.textContent = `🥚 ${this.game.eggsLeft} left`;
-    //this.hudJumps.textContent = `🥕 ×${this.game.player.jumpsLeft}`;
-    this.hudMoves.textContent = `Moves: ${this.game.player.moves}`;
-    this.hudTime.textContent = `⏱ ${mm}:${ss}`;
+    this.hudWood.hidden = false;
+    this.hudWoodCount.textContent = this.game.player.collectedWood.toString();
+    this.hudMoves.textContent = `Moves: ${this.game.usedMoves}/${this.game.maxMoves}`;
+    this.updateDaylightHUD();
+  }
+
+  private updateDaylightHUD(): void {
+    const daylight = this.game.daylight;
+    const isEndOverlayVisible =
+      this.game.phase === "won" || this.game.phase === "lost";
+    const brightness = 0.82 + daylight.lightIntensity * 0.18;
+    const overlayDarkness = isEndOverlayVisible
+      ? daylight.darkness * 0.35
+      : daylight.darkness;
+
+    this.hudDayLabel.textContent = daylight.label;
+    this.hudDayRemaining.textContent = `${this.game.remainingMoves} moves left`;
+    this.hudDayProgress.style.width = `${daylight.progress * 100}%`;
+    this.gameStage.style.setProperty(
+      "--daylight-brightness",
+      (isEndOverlayVisible ? Math.max(brightness, 0.96) : brightness).toString(),
+    );
+    this.daylightOverlay.style.opacity = overlayDarkness.toString();
   }
 }

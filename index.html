@@ -10,14 +10,25 @@
     <div id="app">
       <div id="hud">
         <span id="hud-level"></span>
-        <span id="hud-eggs"></span>
-        <span id="hud-jumps"></span>
+        <span id="hud-wood" class="hud-resource">
+          <span class="tree-token" aria-label="wood"></span>
+          <span id="hud-wood-count"></span>
+        </span>
         <span id="hud-moves"></span>
-        <span id="hud-time"></span>
+        <span id="hud-day-label"></span>
+        <span id="hud-day-remaining"></span>
+        <span id="hud-day-track" aria-hidden="true">
+          <span id="hud-day-progress"></span>
+        </span>
       </div>
-      <canvas id="game"></canvas>
+      <div id="game-stage">
+        <canvas id="game"></canvas>
+        <div id="daylight-overlay" aria-hidden="true"></div>
+      </div>
       <div id="controls-hint">
-        ← → ↑ ↓ Move &nbsp;|&nbsp; Space Jump (needs 🥕) &nbsp;|&nbsp; R Restart &nbsp;|&nbsp; S Music
+        <span>← → ↑ ↓ Move</span>
+        <span>Enter water to build bridge (needs 2x <span class="tree-token" aria-label="wood"></span>)</span>
+        <span>R Restart</span>
       </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
