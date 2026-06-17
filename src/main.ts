@@ -7,6 +7,8 @@ import { CanvasManager } from "./rendering/canvas-manager";
 import { GameRenderer } from "./rendering/game-renderer";
 import { MenuRenderer } from "./rendering/menu-renderer";
 import { registerGameTools, setAiPlanHandler } from "./webmcp";
+import { DeviceDetection } from "./rendering/game-detection";
+import { TouchControls } from "./game-controls/TouchControls";
 
 const canvas        = document.getElementById('game') as HTMLCanvasElement;
 const appContainer  = document.getElementById('app') as HTMLElement;
@@ -40,6 +42,16 @@ function openHelpDialog(): void {
 function closeHelpDialog(): void {
   showHelpDialog = false;
   redraw();
+}
+
+if (DeviceDetection.shouldShowTouchControls()) {
+  new TouchControls(
+    game,
+    startGame,
+    redraw,
+    () => showHelpDialog,
+    closeHelpDialog,
+  );
 }
 
 new Input(

@@ -5,7 +5,7 @@ export class Level1 extends Level {
   constructor() {
     super();
     this.name = 'Level 1';
-    this.maxMoves = 34;
+    this.maxMoves = 33;
   }
 
   setup(): void {
@@ -24,6 +24,8 @@ export class Level1 extends Level {
   }
 
   private addObjects(): void {
+    this.addTree(1,  1);
+    this.addTree(9,  0);
     this.addTree(2,  11);
     this.addTree(1,  11);
     this.addTree(2,  12);

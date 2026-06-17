@@ -54,8 +54,6 @@ export class AiPlanReplayer {
         return "MoveLeft";
       case "MOVE_RIGHT":
         return "MoveRight";
-      case "COLLECT_WOOD":
-        return "CollectWood";
     }
   }
 

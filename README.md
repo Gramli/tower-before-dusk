@@ -16,7 +16,7 @@ the current map and submit a complete action plan for replay in the UI.
 
 - Three handcrafted puzzle levels with different tower layouts and move limits
 - Daylight system that tracks the move budget from morning through sunset
-- Trees that can be cut for wood, either manually or when leaving the tile
+- Trees that are collected automatically for wood when entered
 - Bridge building over water, consuming two wood per water tile
 - Rocks, water, bridges, towers, and sprite-based terrain rendering
 - Responsive canvas scaling for different browser sizes
@@ -27,13 +27,12 @@ the current map and submit a complete action plan for replay in the UI.
 ## How to Play
 
 Reach a tower before the move budget runs out. You start each level in the upper
-left corner and must navigate around rocks and water. Trees are walkable and can
-be cut for wood. Entering a water tile requires at least two wood, then builds a
-single bridge on that tile and consumes the wood.
+left corner and must navigate around rocks and water. Trees are walkable and are
+collected for wood as soon as you enter them. Collecting a tree costs one extra
+move. Entering a water tile requires at least two wood, then builds a single
+bridge on that tile and consumes the wood.
 
-Each move costs one move. Building a bridge costs one extra move, and cutting a
-tree costs one move. If you leave a tree tile without collecting it first, the
-tree is cut automatically as an extra move.
+Each move costs one move. Building a bridge also costs one extra move.
 
 ### Keyboard Controls
 
@@ -107,8 +106,8 @@ or `navigator.modelContext`, the game registers two tools:
 - `submitPlan` accepts a full one-shot action list and replays it in the game
   board with a short delay between moves.
 
-Supported plan actions are `MOVE_UP`, `MOVE_DOWN`, `MOVE_LEFT`, `MOVE_RIGHT`,
-and `COLLECT_WOOD`.
+Supported plan actions are `MOVE_UP`, `MOVE_DOWN`, `MOVE_LEFT`, and
+`MOVE_RIGHT`.
 
 ## License
 

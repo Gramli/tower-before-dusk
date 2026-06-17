@@ -5,7 +5,6 @@ export type InputAction =
   | 'MoveDown'
   | 'MoveLeft'
   | 'MoveRight'
-  | 'CollectWood'
   | 'StartOrRestart'
   | 'NextLevel'
   | 'StartOrNextLevel';
@@ -52,7 +51,6 @@ export function applyAction(
         case 'MoveDown':       game.setDirection('down');  game.handleMove(0, 1);  break;
         case 'MoveLeft':       game.setDirection('left');  game.handleMove(-1, 0); break;
         case 'MoveRight':      game.setDirection('right'); game.handleMove(1, 0);  break;
-        case 'CollectWood':    game.handleCollectWood();                           break;
         case 'StartOrRestart': game.restartLevel();                                        break;
         default: return;
       }

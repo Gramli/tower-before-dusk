@@ -100,12 +100,11 @@ export class Game {
       usedMoves++;
     }
 
-    if (this.tryCutDownTree()) {
-      usedMoves++;
-    }
-
     this.player.x = nx;
     this.player.y = ny;
+    if (this.collectTreeAt(nx, ny)) {
+      usedMoves++;
+    }
     this.player.moves += usedMoves;
 
     this.checkEndConditions();
@@ -115,15 +114,6 @@ export class Game {
     this.level.addBridge(x,y);
     this.player.buildBridge();
 
-  }
-
-  handleCollectWood(): void {
-    if (this.phase !== 'playing') return;
-
-    if (this.tryCutDownTree()) {
-      this.player.moves++;
-      this.checkEndConditions();
-    }
   }
 
   setDirection(direction: Direction): void {
@@ -195,23 +185,22 @@ export class Game {
     return this.level.objects.some(obj => obj instanceof Bridge && obj.x === x && obj.y === y);
   }
 
-  private tryCutDownTree(): boolean {
-    const { x, y } = this.player;
-    let didCutTree = false;
+  private collectTreeAt(x: number, y: number): boolean {
+    let didCollectTree = false;
 
     this.level.objects = this.level.objects.filter(obj => {
       if (obj.x === x && obj.y === y) {
         if (obj instanceof Tree) {
           this.player.collectedWood++;
           this.player.cutedTrees++;
-          didCutTree = true;
+          didCollectTree = true;
           return false;
         }
       }
       return true;
     });
 
-    return didCutTree;
+    return didCollectTree;
   }
 
   private checkEndConditions(): void {

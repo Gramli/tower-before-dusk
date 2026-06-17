@@ -4,8 +4,7 @@ export type GameAction =
   | "MOVE_UP"
   | "MOVE_DOWN"
   | "MOVE_LEFT"
-  | "MOVE_RIGHT"
-  | "COLLECT_WOOD";
+  | "MOVE_RIGHT";
 
 export type GamePlan = {
   actions: GameAction[];
@@ -120,7 +119,6 @@ function createSubmitPlanTool(): object {
               "MOVE_DOWN",
               "MOVE_LEFT",
               "MOVE_RIGHT",
-              "COLLECT_WOOD",
             ],
           },
         },

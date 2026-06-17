@@ -23,7 +23,7 @@ export interface IGameRules {
   map: string;
   movement: string;
   rock: string;
-  collectWood: string;
+  wood: string;
   water: string;
   bridge: string;
   bridgeLimit: string;
@@ -54,8 +54,8 @@ export const gameState: GameState = {
     rock:
       "Rock tiles marked R are blocked and cannot be entered.",
 
-    collectWood:
-      "If the player is standing on W, COLLECT_WOOD cuts the tree. It costs 1 move, adds 1 wood, and removes W from the map. Moving away from W also cuts it automatically as an extra move.",
+    wood:
+      "Tree tiles marked W are walkable. When the player enters W, the tree is collected automatically, costs 1 extra move, adds 1 wood, and is removed from the map.",
 
     water:
       "Water cannot be entered unless the player has at least 2 wood.",
@@ -78,7 +78,6 @@ export const gameState: GameState = {
     "MOVE_DOWN",
     "MOVE_LEFT",
     "MOVE_RIGHT",
-    "COLLECT_WOOD",
   ],
 
   remainingMoves: 30,
