@@ -1,0 +1,115 @@
+# Tower Before Dusk
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)](https://vite.dev/)
+[![Canvas](https://img.shields.io/badge/HTML%20Canvas-game-2E7D32)](https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API)
+
+Tower Before Dusk is a tile-based puzzle game about reaching the tower before
+sunset. Plan each route carefully: every move spends daylight, trees provide
+wood, and water can only be crossed by building bridges.
+
+The game is built as a modern browser app with TypeScript, HTML canvas, and
+Vite. It also exposes a small model-context interface so an assistant can read
+the current map and submit a complete action plan for replay in the UI.
+
+## Features
+
+- Three handcrafted puzzle levels with different tower layouts and move limits
+- Daylight system that tracks the move budget from morning through sunset
+- Trees that can be cut for wood, either manually or when leaving the tile
+- Bridge building over water, consuming two wood per water tile
+- Rocks, water, bridges, towers, and sprite-based terrain rendering
+- Responsive canvas scaling for different browser sizes
+- Keyboard-driven play with restart and help shortcuts
+- HUD for level name, wood count, moves used, daylight phase, and moves left
+- Optional Web MCP-style tools for reading game state and replaying AI plans
+
+## How to Play
+
+Reach a tower before the move budget runs out. You start each level in the upper
+left corner and must navigate around rocks and water. Trees are walkable and can
+be cut for wood. Entering a water tile requires at least two wood, then builds a
+single bridge on that tile and consumes the wood.
+
+Each move costs one move. Building a bridge costs one extra move, and cutting a
+tree costs one move. If you leave a tree tile without collecting it first, the
+tree is cut automatically as an extra move.
+
+### Keyboard Controls
+
+| Key | Action |
+| --- | --- |
+| Arrow keys | Move one tile |
+| `Enter` | Start the game or continue to the next level after winning |
+| `Space` | Start the game from the menu |
+| `R` | Restart the current level |
+| `H` | Show the help dialog |
+| Any key or click | Close the help dialog |
+
+## Getting Started
+
+Requirements:
+
+- [Node.js](https://nodejs.org/)
+- npm
+
+Install dependencies and start the development server:
+
+```bash
+npm ci
+npm run dev
+```
+
+Open the URL printed by Vite, usually `http://localhost:5173`.
+
+Create a production build:
+
+```bash
+npm run build
+```
+
+Preview the production build locally:
+
+```bash
+npm run preview
+```
+
+## Project Structure
+
+```text
+.
+|-- public/          # Static browser assets such as the favicon
+|-- src/
+|   |-- assets/      # Game sprites
+|   |-- game-controls/
+|   |   |-- input.ts           # Keyboard and pointer input
+|   |   `-- ai-plan-replayer.ts # Replays submitted AI action plans
+|   |-- game-logic/  # Daylight and move-budget helpers
+|   |-- game-objects/ # Player, trees, bridges, terrain objects
+|   |-- levels/      # Level definitions and map setup helpers
+|   |-- models/      # Game state and shared model types
+|   |-- rendering/   # Canvas, HUD, overlay, and object renderers
+|   |-- game.ts      # Core gameplay rules
+|   |-- main.ts      # Browser entry point
+|   `-- webmcp.ts    # Model-context tool registration
+|-- index.html
+|-- package.json
+`-- tsconfig.json
+```
+
+## AI Plan Tools
+
+When a compatible model-context runtime is available on `document.modelContext`
+or `navigator.modelContext`, the game registers two tools:
+
+- `getGameState` returns the current objective, rules, visible map, wood count,
+  remaining moves, and valid actions.
+- `submitPlan` accepts a full one-shot action list and replays it in the game
+  board with a short delay between moves.
+
+Supported plan actions are `MOVE_UP`, `MOVE_DOWN`, `MOVE_LEFT`, `MOVE_RIGHT`,
+and `COLLECT_WOOD`.
+
+## License
+
+No license file is currently included in this repository.
