@@ -9,11 +9,15 @@ import { gameState, type GameState } from "./models/game-state";
 import { CellType, type GameActor, type GamePhase } from "./models/game-models";
 import { Level1 } from "./levels/level1";
 import { Level3 } from "./levels/level3";
+import { Level4 } from "./levels/level4";
+import { Level5 } from "./levels/level5";
 
 const LEVELS: Array<() => Level> = [
   () => new Level1(),
   () => new Level2(),
   () => new Level3(),
+  () => new Level4(),
+  () => new Level5(),
 ];
 
 export class Game {

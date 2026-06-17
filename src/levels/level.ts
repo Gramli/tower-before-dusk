@@ -72,4 +72,10 @@ export abstract class Level {
   addTree(x: number, y: number): void {
     this.objects.push(new Tree(x, y));
   }
+
+  protected addRowOfTrees(startX: number, y: number, count: number): void {
+    for (let x = startX; x < Level.COLS && count > 0; x++, count--) {
+        this.objects.push(new Tree(x, y));
+    }
+  }
 }
