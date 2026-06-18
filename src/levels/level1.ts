@@ -25,7 +25,7 @@ export class Level1 extends Level {
 
   private addObjects(): void {
     this.addTree(1,  1);
-    this.addTree(9,  0);
+    this.addTree(8,  1);
     this.addTree(2,  11);
     this.addTree(1,  11);
     this.addTree(2,  12);

@@ -27,12 +27,13 @@ export interface IGameRules {
   water: string;
   bridge: string;
   bridgeLimit: string;
+  strategy: string;
   goal: string;
   lose: string;
 }
 
 export const gameState: GameState = {
-  objective: "Reach G before sunset.",
+  objective:  "Reach G before sunset using as few moves as possible. Do not collect unnecessary wood.",
 
   legend: {
     P: "player start position",
@@ -55,7 +56,7 @@ export const gameState: GameState = {
       "Rock tiles marked R are blocked and cannot be entered.",
 
     wood:
-      "Tree tiles marked W are walkable. When the player enters W, the tree is collected automatically, costs 1 extra move, adds 1 wood, and is removed from the map.",
+      "Tree tiles marked W are walkable, but entering W automatically collects the tree. This costs 1 extra move, adds 1 wood, and removes W from the map. Because collecting wood costs an extra move, avoid W unless the wood is needed to cross water.",
 
     water:
       "Water cannot be entered unless the player has at least 2 wood.",
@@ -65,6 +66,9 @@ export const gameState: GameState = {
 
     bridgeLimit:
       "Each bridge covers only one water tile. If there are multiple water tiles in a row, the player needs enough wood to build one bridge per water tile.",
+
+    strategy:
+      "Use the minimum number of actions needed to reach G. Do not collect wood unless it is required to build enough bridges. Avoid stepping on W unless that wood is necessary. Extra wood has no value at the end.",
 
     goal:
       "The player wins immediately when reaching G using no more than the maximum allowed moves.",
