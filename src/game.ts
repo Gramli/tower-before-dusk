@@ -11,6 +11,7 @@ import { Level1 } from "./levels/level1";
 import { Level3 } from "./levels/level3";
 import { Level4 } from "./levels/level4";
 import { Level5 } from "./levels/level5";
+import { Level6 } from "./levels/level6";
 
 const LEVELS: Array<() => Level> = [
   () => new Level1(),
@@ -18,6 +19,7 @@ const LEVELS: Array<() => Level> = [
   () => new Level3(),
   () => new Level4(),
   () => new Level5(),
+  () => new Level6(),
 ];
 
 export class Game {
