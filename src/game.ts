@@ -5,7 +5,6 @@ import { Tree } from "./game-objects/tree";
 import { getDaylightState, type DaylightState } from "./game-logic/daylight";
 import type { Level } from "./levels/level";
 import { Level2 } from "./levels/level2";
-import { gameState, type GameState } from "./models/game-state";
 import { CellType, type GameActor, type GamePhase } from "./models/game-models";
 import { Level1 } from "./levels/level1";
 import { Level3 } from "./levels/level3";
@@ -125,55 +124,6 @@ export class Game {
   setDirection(direction: Direction): void {
     if (this.phase === 'playing') {
       this.player.setDirection(direction);
-    }
-  }
-
-  public getGameState(): GameState {
-    if (!this.level || !this.player) {
-      this.startLevel(this.levelIndex);
-    }
-
-    return {
-      ...gameState,
-      legend: { ...gameState.legend },
-      rules: { ...gameState.rules },
-      remainingMoves: this.remainingMoves,
-      wood: this.player.collectedWood,
-      visibleMap: this.getVisibleMap(),
-    };
-  }
-
-  private getVisibleMap(): string[] {
-    return Array.from({ length: GameConstants.MAP_ROWS }, (_, y) =>
-      Array.from({ length: GameConstants.MAP_COLS }, (_, x) =>
-        this.getMapSymbol(x, y)
-      ).join(" ")
-    );
-  }
-
-  private getMapSymbol(x: number, y: number): string {
-    if (this.player.x === x && this.player.y === y) {
-      return "P";
-    }
-
-    const object = this.level.objects.find(obj => obj.x === x && obj.y === y);
-    if (object instanceof Tree) {
-      return "W";
-    }
-    if (object instanceof Bridge) {
-      return "B";
-    }
-
-    switch (this.level.grid[x][y]) {
-      case CellType.water:
-        return "~";
-      case CellType.tower:
-        return "G";
-      case CellType.rock:
-        return "R";
-      case CellType.empty:
-      default:
-        return ".";
     }
   }
 

@@ -1,4 +1,5 @@
 import "./style.css";
+import { AIGame } from "./ai-game";
 import { Game } from "./game";
 import { loadImages } from "./game-assets";
 import { AiPlanReplayer } from "./game-controls/ai-plan-replayer";
@@ -19,6 +20,7 @@ const ctx           = canvas.getContext('2d')!;
 
 const images   = await loadImages();
 const game     = new Game();
+const aiGame   = new AIGame(game, { maxPlanChecksPerLevel: 2 });
 const menuRenderer = new MenuRenderer(canvas, game);
 const gameRenderer = new GameRenderer(ctx, images);
 let showHelpDialog = false;
@@ -65,9 +67,11 @@ new Input(
 const aiPlanReplayer = new AiPlanReplayer(game, startGame, redraw);
 setAiPlanHandler(plan => aiPlanReplayer.replay(plan));
 registerGameTools(() => {
-  const state = game.getGameState();
+  const state = aiGame.getGameState();
   redraw();
   return state;
+}, plan => {
+  return aiGame.checkPlan(plan);
 });
 
 canvasManager.onResize(() => redraw());

@@ -1,5 +1,5 @@
 import type { Game } from "../game";
-import type { GameAction, GamePlan } from "../webmcp";
+import type { GameAction, GamePlan } from "../models/ai-plan";
 import { applyAction, type InputAction } from "./input-action";
 
 export class AiPlanReplayer {
