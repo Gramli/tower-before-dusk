@@ -133,6 +133,23 @@ export abstract class Level {
     }
   }
 
+  protected fillEmptyCellsWith(
+    objectType: GameObjectConstructor,
+    excludedPositions: Array<{ x: number; y: number }> = [],
+  ): void {
+    for (let x = 0; x < Level.COLS; x++) {
+      for (let y = 0; y < Level.ROWS; y++) {
+        const isExcluded = excludedPositions.some(
+          (position) => position.x === x && position.y === y,
+        );
+
+        if (this.grid[x][y] === CellType.empty && !isExcluded) {
+          this.objects.push(new objectType(x, y));
+        }
+      }
+    }
+  }
+
   protected addRowOfTrees(startX: number, y: number, count: number): void {
     this.addRowOfObjects(Tree, startX, y, count);
   }
