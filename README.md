@@ -10,11 +10,12 @@ wood, and water can only be crossed by building bridges.
 
 The game is built as a modern browser app with TypeScript, HTML canvas, and
 Vite. It also exposes a small model-context interface so an assistant can read
-the current map and submit a complete action plan for replay in the UI.
+the current map, validate a route, and submit a complete action plan for replay
+in the UI.
 
 ## Features
 
-- Three handcrafted puzzle levels with different tower layouts and move limits
+- Eight handcrafted puzzle levels with different tower layouts and move limits
 - Daylight system that tracks the move budget from morning through sunset
 - Trees that are collected automatically for wood when entered
 - Bridge building over water, consuming two wood per water tile
@@ -22,7 +23,8 @@ the current map and submit a complete action plan for replay in the UI.
 - Responsive canvas scaling for different browser sizes
 - Keyboard-driven play with restart and help shortcuts
 - HUD for level name, wood count, moves used, daylight phase, and moves left
-- Optional Web MCP-style tools for reading game state and replaying AI plans
+- Optional Web MCP-style tools for reading state, checking plans, and replaying
+  AI plans
 
 ## How to Play
 
@@ -86,8 +88,9 @@ npm run preview
 |   |-- game-logic/  # Daylight and move-budget helpers
 |   |-- game-objects/ # Player, trees, bridges, terrain objects
 |   |-- levels/      # Level definitions and map setup helpers
-|   |-- models/      # Game state and shared model types
+|   |-- models/      # Game state, AI plan, and shared model types
 |   |-- rendering/   # Canvas, HUD, overlay, and object renderers
+|   |-- ai-game.ts   # AI-only game-state projection and plan simulation
 |   |-- game.ts      # Core gameplay rules
 |   |-- main.ts      # Browser entry point
 |   `-- webmcp.ts    # Model-context tool registration
@@ -99,15 +102,36 @@ npm run preview
 ## AI Plan Tools
 
 When a compatible model-context runtime is available on `document.modelContext`
-or `navigator.modelContext`, the game registers two tools:
+or `navigator.modelContext`, the game registers three tools:
 
-- `getGameState` returns the current objective, rules, visible map, wood count,
-  remaining moves, and valid actions.
+- `getGameState` returns the dynamic state: remaining moves, wood, and a compact
+  visible map.
+- `checkPlan` simulates a proposed action list without changing the game. Its
+  result includes whether the goal is reached, final position, remaining moves,
+  a reason, and the number of checks still available.
 - `submitPlan` accepts a full one-shot action list and replays it in the game
   board with a short delay between moves.
 
 Supported plan actions are `MOVE_UP`, `MOVE_DOWN`, `MOVE_LEFT`, and
 `MOVE_RIGHT`.
+
+`visibleMap` is an array of rows from top to bottom. Each row is a compact
+string: its first character is `x=0`. `P` is the player, `.` land, `W` a tree,
+`~` water, `B` a bridge, `R` rock, and `G` a goal.
+
+Use the tools in this order:
+
+1. Call `getGameState` and prepare a complete route.
+2. Call `checkPlan` to validate it. If the plan is invalid and checks remain,
+   revise it and check again.
+3. When the plan is valid—or no checks remain after revising it—call
+   `submitPlan`.
+
+The number of validations available for each level is configured in `main.ts`:
+
+```ts
+new AIGame(game, { maxPlanChecksPerLevel: 2 });
+```
 
 ## License
 
