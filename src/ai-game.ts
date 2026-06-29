@@ -39,9 +39,11 @@ export class AIGame {
   }
 
   getGameState(): GameState {
-    this.ensureLevelStarted();
+    this.ensureGameStarted();
 
     return {
+      phase: this.game.phase,
+      level: this.game.levelIndex + 1,
       remainingMoves: this.game.remainingMoves,
       wood: this.game.player.collectedWood,
       visibleMap: this.getVisibleMap(),
@@ -196,12 +198,17 @@ export class AIGame {
   }
 
   private ensureLevelStarted(): Player {
-    if (!this.game.level || !this.game.player) {
-      this.game.startLevel(this.game.levelIndex);
-    } else if (this.game.phase === "lost") {
+    this.ensureGameStarted();
+    if (this.game.phase === "lost") {
       this.game.restartLevel();
     }
     return this.game.player;
+  }
+
+  private ensureGameStarted(): void {
+    if (!this.game.level || !this.game.player) {
+      this.game.startLevel(this.game.levelIndex);
+    }
   }
 
   private resetPlanCheckForNewAttempt(player: Player): void {
