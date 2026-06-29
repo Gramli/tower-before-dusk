@@ -26,10 +26,15 @@ export const towerBeforeDuskTools: Tool[] = [
       {
         name: "getGameState",
         description:
-          "Get the current board. visibleMap rows run top-to-bottom; each character is x=0 onward. P=player, .=land, W=tree (enter: 2 moves, +1 wood), ~=water (requires 2 wood; entering unbridged water: 2 moves, -2 wood), B=walkable bridge, R=blocked rock, G=goal. Move U/D/L/R costs 1. Reach G before remainingMoves reaches 0. Use checkPlan before submitPlan if available.",
+          "Get the current phase, 1-based level number, and board. visibleMap rows run top-to-bottom; each character is x=0 onward. P=player, .=land, W=tree (enter: 2 moves, +1 wood), ~=water (requires 2 wood; entering unbridged water: 2 moves, -2 wood), B=walkable bridge, R=blocked rock, G=goal. Move U/D/L/R costs 1. Reach G before remainingMoves reaches 0. Use checkPlan before submitPlan if available.",
         responseJsonSchema: {
           type: "object",
           properties: {
+            phase: {
+              type: "string",
+              enum: ["menu", "playing", "won", "lost"],
+            },
+            level: { type: "number" },
             remainingMoves: { type: "number" },
             wood: { type: "number" },
             visibleMap: {
@@ -38,6 +43,8 @@ export const towerBeforeDuskTools: Tool[] = [
             },
           },
           required: [
+            "phase",
+            "level",
             "remainingMoves",
             "wood",
             "visibleMap",

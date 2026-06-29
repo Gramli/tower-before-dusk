@@ -27,6 +27,25 @@ export class ModelContextService {
           JSON.stringify(args),
         );
 
+        if (
+          result &&
+          typeof result === "object" &&
+          "structuredContent" in result
+        ) {
+          return result.structuredContent;
+        }
+
+        const textContent = result?.content?.find(
+          (item: any) => typeof item?.text === "string",
+        )?.text;
+        if (textContent) {
+          try {
+            return JSON.parse(textContent);
+          } catch {
+            return result;
+          }
+        }
+
         return result;
       },
       { toolName, args },

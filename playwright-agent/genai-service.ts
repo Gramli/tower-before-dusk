@@ -16,7 +16,7 @@ export class GenaiService {
   private readonly model: string;
   private contents: Content[] = [];
 
-  constructor(model: string = "gemini-3.1-flash-lite") {
+  constructor(model: string = "gemini-3.5-flash") {
     this.model = model;
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {

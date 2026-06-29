@@ -28,7 +28,7 @@ async function main(): Promise<void> {
     );
 
     await agent.play(page);
-    console.log("Plan submitted.");
+    console.log("Levels 1 and 2 completed.");
   } catch (error) {
     await context.close();
     throw error;
